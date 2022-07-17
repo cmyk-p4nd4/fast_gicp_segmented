@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(fast_gicp)
+project(fast_gicp_segmented)
 
 option(BUILD_VGICP_CUDA "Build GPU-powered VGICP" OFF)
 option(BUILD_apps "Build application programs" ON)
@@ -23,10 +23,6 @@ if(NOT BUILD_PYTHON_BINDINGS)
 endif()
 
 find_package(OpenMP)
-if (OPENMP_FOUND)
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif()
 
 if(BUILD_VGICP_CUDA)
   find_package(CUDA REQUIRED)
@@ -40,7 +36,7 @@ endif()
 if(catkin_FOUND)
   catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES fast_gicp
+    LIBRARIES ${PROJECT_NAME}
   )
 endif()
 
@@ -48,16 +44,30 @@ endif()
 ## Build ##
 ###########
 
-add_library(fast_gicp SHARED
+add_library(${PROJECT_NAME} SHARED
   src/fast_gicp/gicp/lsq_registration.cpp
   src/fast_gicp/gicp/fast_gicp.cpp
   src/fast_gicp/gicp/fast_gicp_st.cpp
   src/fast_gicp/gicp/fast_vgicp.cpp
 )
-target_link_libraries(fast_gicp
+target_link_libraries(${PROJECT_NAME}
   ${PCL_LIBRARIES}
 )
-target_include_directories(fast_gicp PUBLIC
+
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(${PROJECT_NAME}
+    OpenMP::OpenMP_CXX
+  )
+endif()
+
+if(OpenMP_C_FOUND)
+  target_link_libraries(${PROJECT_NAME}
+    OpenMP::OpenMP_C
+  )
+endif()
+
+
+target_include_directories(${PROJECT_NAME} PUBLIC
   include
   ${PCL_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
@@ -66,17 +76,17 @@ target_include_directories(fast_gicp PUBLIC
 ### APPS ###
 if(BUILD_apps)
   add_executable(gicp_align src/align.cpp)
-  add_dependencies(gicp_align fast_gicp)
+  add_dependencies(gicp_align ${PROJECT_NAME})
   target_link_libraries(gicp_align
     ${PCL_LIBRARIES}
-    fast_gicp
+    ${PROJECT_NAME}
   )
 
   add_executable(gicp_kitti src/kitti.cpp)
-  add_dependencies(gicp_kitti fast_gicp)
+  add_dependencies(gicp_kitti ${PROJECT_NAME})
   target_link_libraries(gicp_kitti
     ${PCL_LIBRARIES}
-    fast_gicp
+    ${PROJECT_NAME}
   )
 endif()
 
@@ -92,7 +102,7 @@ if(BUILD_PYTHON_BINDINGS)
     ${EIGEN3_INCLUDE_DIR}
   )
   target_link_libraries(pygicp PRIVATE
-    fast_gicp
+    ${PROJECT_NAME}
   )
 endif()
 
@@ -126,14 +136,14 @@ if(BUILD_VGICP_CUDA)
   cuda_add_cublas_to_target(fast_vgicp_cuda)
 
   # add vgicp_cuda to libfast_gicp
-  target_sources(fast_gicp PRIVATE
+  target_sources(${PROJECT_NAME} PRIVATE
     src/fast_gicp/gicp/fast_vgicp_cuda.cpp
     src/fast_gicp/ndt/ndt_cuda.cpp
   )
-  target_link_libraries(fast_gicp
+  target_link_libraries(${PROJECT_NAME}
     fast_vgicp_cuda
   )
-  add_dependencies(fast_gicp fast_vgicp_cuda)
+  add_dependencies(${PROJECT_NAME} fast_vgicp_cuda)
   if(catkin_FOUND)
     install(TARGETS fast_vgicp_cuda  
       LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
@@ -145,8 +155,8 @@ if(BUILD_test)
   find_package(GTest REQUIRED)
 
   add_executable(gicp_test src/test/gicp_test.cpp)
-  add_dependencies(gicp_test fast_gicp)
-  target_link_libraries(gicp_test ${GTEST_LIBRARIES} ${PCL_LIBRARIES} fast_gicp)
+  add_dependencies(gicp_test ${PROJECT_NAME})
+  target_link_libraries(gicp_test ${GTEST_LIBRARIES} ${PCL_LIBRARIES} ${PROJECT_NAME})
   gtest_add_tests(TARGET gicp_test WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} EXTRA_ARGS "${CMAKE_SOURCE_DIR}/data")
 endif()
 

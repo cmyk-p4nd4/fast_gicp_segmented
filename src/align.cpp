@@ -18,6 +18,8 @@
 #include <fast_gicp/gicp/fast_vgicp_cuda.hpp>
 #endif
 
+#include <omp.h> // for intellisense purpose
+
 // benchmark for PCL's registration methods
 template <typename Registration>
 void test_pcl(Registration& reg, const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& target, const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& source) {
