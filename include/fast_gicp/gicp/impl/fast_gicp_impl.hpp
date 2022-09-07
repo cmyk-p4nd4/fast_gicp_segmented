@@ -8,18 +8,18 @@ namespace fast_gicp {
 template <typename PointSource, typename PointTarget>
 FastGICP<PointSource, PointTarget>::FastGICP() {
 #ifdef _OPENMP
-  num_threads_ = omp_get_max_threads();
+  this->num_threads_ = omp_get_max_threads();
 #else
-  num_threads_ = 1;
+  this->num_threads_ = 1;
 #endif
 
-  k_correspondences_ = 20;
-  reg_name_ = "FastGICP";
-  corr_dist_threshold_ = std::numeric_limits<float>::max();
+  this->k_correspondences_ = 20;
+  this->reg_name_ = "FastGICP";
+  this->corr_dist_threshold_ = std::numeric_limits<float>::max();
 
-  regularization_method_ = RegularizationMethod::PLANE;
-  source_kdtree_.reset(new pcl::search::KdTree<PointSource>);
-  target_kdtree_.reset(new pcl::search::KdTree<PointTarget>);
+  this->regularization_method_ = RegularizationMethod::PLANE;
+  this->source_kdtree_.reset(new pcl::search::KdTree<PointSource>);
+  this->target_kdtree_.reset(new pcl::search::KdTree<PointTarget>);
 }
 
 template <typename PointSource, typename PointTarget>
@@ -27,45 +27,45 @@ FastGICP<PointSource, PointTarget>::~FastGICP() {}
 
 template <typename PointSource, typename PointTarget>
 void FastGICP<PointSource, PointTarget>::setNumThreads(int n) {
-  num_threads_ = n;
+  this->num_threads_ = n;
 
 #ifdef _OPENMP
   if (n == 0) {
-    num_threads_ = omp_get_max_threads();
+    this->num_threads_ = omp_get_max_threads();
   }
 #endif
 }
 
 template <typename PointSource, typename PointTarget>
 void FastGICP<PointSource, PointTarget>::setCorrespondenceRandomness(int k) {
-  k_correspondences_ = k;
+  this->k_correspondences_ = k;
 }
 
 template <typename PointSource, typename PointTarget>
 void FastGICP<PointSource, PointTarget>::setRegularizationMethod(RegularizationMethod method) {
-  regularization_method_ = method;
+  this->regularization_method_ = method;
 }
 
 template <typename PointSource, typename PointTarget>
 void FastGICP<PointSource, PointTarget>::swapSourceAndTarget() {
-  input_.swap(target_);
-  source_kdtree_.swap(target_kdtree_);
-  source_covs_.swap(target_covs_);
+  this->input_.swap(target_);
+  this->source_kdtree_.swap(target_kdtree_);
+  this->source_covs_.swap(target_covs_);
 
-  correspondences_.clear();
-  sq_distances_.clear();
+  this->correspondences_.clear();
+  this->sq_distances_.clear();
 }
 
 template <typename PointSource, typename PointTarget>
 void FastGICP<PointSource, PointTarget>::clearSource() {
-  input_.reset();
-  source_covs_.clear();
+  this->input_.reset();
+  this->source_covs_.clear();
 }
 
 template <typename PointSource, typename PointTarget>
 void FastGICP<PointSource, PointTarget>::clearTarget() {
-  target_.reset();
-  target_covs_.clear();
+  this->target_.reset();
+  this->target_covs_.clear();
 }
 
 template <typename PointSource, typename PointTarget>
@@ -75,8 +75,8 @@ void FastGICP<PointSource, PointTarget>::setInputSource(const PointCloudSourceCo
   }
 
   pcl::Registration<PointSource, PointTarget, Scalar>::setInputSource(cloud);
-  source_kdtree_->setInputCloud(cloud);
-  source_covs_.clear();
+  this->source_kdtree_->setInputCloud(cloud);
+  this->source_covs_.clear();
 }
 
 template <typename PointSource, typename PointTarget>
@@ -85,27 +85,27 @@ void FastGICP<PointSource, PointTarget>::setInputTarget(const PointCloudTargetCo
     return;
   }
   pcl::Registration<PointSource, PointTarget, Scalar>::setInputTarget(cloud);
-  target_kdtree_->setInputCloud(cloud);
-  target_covs_.clear();
+  this->target_kdtree_->setInputCloud(cloud);
+  this->target_covs_.clear();
 }
 
 template <typename PointSource, typename PointTarget>
 void FastGICP<PointSource, PointTarget>::setSourceCovariances(const std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& covs) {
-  source_covs_ = covs;
+  this->source_covs_ = covs;
 }
 
 template <typename PointSource, typename PointTarget>
 void FastGICP<PointSource, PointTarget>::setTargetCovariances(const std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& covs) {
-  target_covs_ = covs;
+  this->target_covs_ = covs;
 }
 
 template <typename PointSource, typename PointTarget>
 void FastGICP<PointSource, PointTarget>::computeTransformation(PointCloudSource& output, const Matrix4& guess) {
-  if (source_covs_.size() != input_->size()) {
-    calculate_covariances(input_, *source_kdtree_, source_covs_);
+  if (this->source_covs_.size() != this->input_->size()) {
+    calculate_covariances(this->input_, *this->source_kdtree_, this->source_covs_);
   }
-  if (target_covs_.size() != target_->size()) {
-    calculate_covariances(target_, *target_kdtree_, target_covs_);
+  if (this->target_covs_.size() != target_->size()) {
+    calculate_covariances(this->target_, *this->target_kdtree_, this->target_covs_);
   }
 
   LsqRegistration<PointSource, PointTarget>::computeTransformation(output, guess);

@@ -62,11 +62,11 @@ public:
   virtual void setTargetCovariances(const std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& covs);
 
   const std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& getSourceCovariances() const {
-    return source_covs_;
+    return this->source_covs_;
   }
 
   const std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& getTargetCovariances() const {
-    return target_covs_;
+    return this->target_covs_;
   }
 
 protected:

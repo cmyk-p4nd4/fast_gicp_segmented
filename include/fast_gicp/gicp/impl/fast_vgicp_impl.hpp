@@ -19,9 +19,9 @@ template <typename PointSource, typename PointTarget>
 FastVGICP<PointSource, PointTarget>::FastVGICP() : FastGICP<PointSource, PointTarget>() {
   this->reg_name_ = "FastVGICP";
 
-  voxel_resolution_ = 1.0;
-  search_method_ = NeighborSearchMethod::DIRECT1;
-  voxel_mode_ = VoxelAccumulationMode::ADDITIVE;
+  this->voxel_resolution_ = 1.0;
+  this->search_method_ = NeighborSearchMethod::DIRECT1;
+  this->voxel_mode_ = VoxelAccumulationMode::ADDITIVE;
 }
 
 template <typename PointSource, typename PointTarget>
@@ -29,17 +29,17 @@ FastVGICP<PointSource, PointTarget>::~FastVGICP() {}
 
 template <typename PointSource, typename PointTarget>
 void FastVGICP<PointSource, PointTarget>::setResolution(double resolution) {
-  voxel_resolution_ = resolution;
+  this->voxel_resolution_ = resolution;
 }
 
 template <typename PointSource, typename PointTarget>
 void FastVGICP<PointSource, PointTarget>::setNeighborSearchMethod(NeighborSearchMethod method) {
-  search_method_ = method;
+  this->search_method_ = method;
 }
 
 template <typename PointSource, typename PointTarget>
 void FastVGICP<PointSource, PointTarget>::setVoxelAccumulationMode(VoxelAccumulationMode mode) {
-  voxel_mode_ = mode;
+  this->voxel_mode_ = mode;
 }
 
 template <typename PointSource, typename PointTarget>
@@ -74,9 +74,9 @@ void FastVGICP<PointSource, PointTarget>::update_correspondences(const Eigen::Is
   voxel_correspondences_.clear();
   auto offsets = neighbor_offsets(search_method_);
 
-  std::vector<std::vector<std::pair<int, GaussianVoxel::Ptr>>> corrs(num_threads_);
+  std::vector<std::vector<std::pair<int, GaussianVoxel::Ptr>>> corrs(this->num_threads_);
   for (auto& c : corrs) {
-    c.reserve((input_->size() * offsets.size()) / num_threads_);
+    c.reserve((input_->size() * offsets.size()) / this->num_threads_);
   }
 
 #pragma omp parallel for num_threads(num_threads_) schedule(guided, 8)
@@ -119,15 +119,15 @@ template <typename PointSource, typename PointTarget>
 double FastVGICP<PointSource, PointTarget>::linearize(const Eigen::Isometry3d& trans, Eigen::Matrix<double, 6, 6>* H, Eigen::Matrix<double, 6, 1>* b) {
   if (voxelmap_ == nullptr) {
     voxelmap_.reset(new GaussianVoxelMap<PointTarget>(voxel_resolution_, voxel_mode_));
-    voxelmap_->create_voxelmap(*target_, target_covs_);
+    voxelmap_->create_voxelmap(*this->target_, this->target_covs_);
   }
 
   update_correspondences(trans);
 
   double sum_errors = 0.0;
-  std::vector<Eigen::Matrix<double, 6, 6>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 6>>> Hs(num_threads_);
-  std::vector<Eigen::Matrix<double, 6, 1>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 1>>> bs(num_threads_);
-  for (int i = 0; i < num_threads_; i++) {
+  std::vector<Eigen::Matrix<double, 6, 6>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 6>>> Hs(this->num_threads_);
+  std::vector<Eigen::Matrix<double, 6, 1>, Eigen::aligned_allocator<Eigen::Matrix<double, 6, 1>>> bs(this->num_threads_);
+  for (int i = 0; i < this->num_threads_; i++) {
     Hs[i].setZero();
     bs[i].setZero();
   }
@@ -170,7 +170,7 @@ double FastVGICP<PointSource, PointTarget>::linearize(const Eigen::Isometry3d& t
   if (H && b) {
     H->setZero();
     b->setZero();
-    for (int i = 0; i < num_threads_; i++) {
+    for (int i = 0; i < this->num_threads_; i++) {
       (*H) += Hs[i];
       (*b) += bs[i];
     }
