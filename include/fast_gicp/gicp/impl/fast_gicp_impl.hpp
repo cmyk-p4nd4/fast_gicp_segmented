@@ -2,6 +2,7 @@
 #define FAST_GICP_FAST_GICP_IMPL_HPP
 
 #include <fast_gicp/so3/so3.hpp>
+#include <fast_gicp/gicp/fast_gicp.hpp>
 
 namespace fast_gicp {
 
